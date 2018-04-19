@@ -2,23 +2,23 @@
 
 /* Multimedia Keys Support */
 #include <X11/XF86keysym.h>
+#include "bstack.c"
+#include "bstackhoriz.c"
 
 /* appearance */
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
+static const unsigned int borderpx  = 0;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const char *fonts[]          = { "Terminus:size=8",
-                                        "FontAwesome:size=10" };
-static const char dmenufont[]       = "Terminus:size=8";
+static const char *fonts[]          = { "xos4 Terminus:size=9" };
+static const char dmenufont[]       = "xos4 Terminus:size=9";
 
-static const char normbordercolor[] = "#1D1F21";
-static const char normbgcolor[]     = "#1D1F21";
+static const char normbordercolor[] = "#282828";
+static const char normbgcolor[]     = "#282828";
 static const char normfgcolor[]     = "#bbbbbb";
 static const char selbordercolor[]  = "#eeeeee";
-static const char selbgcolor[]      = "#1D1F21";
+static const char selbgcolor[]      = "#282828";
 static const char selfgcolor[]      = "#ffffff";
-
 
 static const char *colors[SchemeLast][3]      = {
   /*               fg           bg           border   */
@@ -28,12 +28,19 @@ static const char *colors[SchemeLast][3]      = {
 
 /* tagging */
 static const char *tags[] = {
-  "\uf268 www",
-  "\uf075 im",
-  "\uf1f8 file",
-  "\uf121 work",
-  "\uf120 term",
-  "\uf188 misc" 
+  "www",
+  "im",
+  "file",
+  "work",
+  "term",
+  "misc" 
+
+  // "\uf268 www",
+  // "\uf075 im",
+  // "\uf1f8 file",
+  // "\uf121 work",
+  // "\uf120 term",
+  // "\uf188 misc" 
 };
 
 static const Rule rules[] = {
@@ -49,19 +56,18 @@ static const Rule rules[] = {
   { "Firefox",       NULL,       NULL,       1 << 0,      False,        -1 },
 
   // im
-  { "URxvt",         NULL,       "mcabber",  1 << 1,      False,        -1 },
-  { "chromium", "web.skype.com", NULL, 1 << 1, False, 1 },
+  { "chromium", "web.skype.com", NULL,       1 << 1,      False,         1 },
   { "Skype",         NULL,       NULL,       1 << 1,      False,        -1 },
-  { "telegram-desktop", NULL,       NULL,       1 << 1,      False,     -1 },
+  { "TelegramDesktop", NULL,     NULL,       1 << 1,      False,        -1 },
 
   // file
   { "Pcmanfm",       NULL,       NULL,       1 << 2,      False,        -1 },
   { "URxvt",         NULL,       "ranger",   1 << 2,      False,        -1 },
   { "Transmission-gtk", NULL,    NULL,       1 << 2,      False,        -1 },
-  { "Wicd-client.py",NULL,       NULL,       1 << 2,      True,         -1 },
 
   // work
   { "Gvim",          NULL,       NULL,       1 << 3,      False,        -1 },
+  { "URxvt",         NULL,       "vim",       1 << 3,      False,       -1 },
   { "Atom",          NULL,       NULL,       1 << 3,      False,        -1 },
 
   // term
@@ -71,13 +77,15 @@ static const Rule rules[] = {
   { "Gimp",          NULL,       NULL,       1 << 5,      True,         -1 },
   { "Wine",          NULL,       NULL,       1 << 5,      True,         -1 },
   { "Steam",         NULL,       NULL,       1 << 5,      True,         -1 },
+  { "dota2",         NULL,       NULL,       1 << 5,      True,         -1 },
 
   // floats
-  { "Gtk-chtheme",   NULL,       NULL,       0,           True,        -1 },
-  { "File-roller",   NULL,       NULL,       0,           True,        -1 },
-  { "Viewnior",      NULL,       NULL,       0,           True,        -1 },
-  { "MPlayer",       NULL,       NULL,       0,           True,        -1 },
-  { "mpv",           NULL,       NULL,       0,           True,        -1 }
+  { "Gtk-chtheme",   NULL,       NULL,       0,           True,         -1 },
+  { "File-roller",   NULL,       NULL,       0,           True,         -1 },
+  { "Viewnior",      NULL,       NULL,       0,           True,         -1 },
+  { "MPlayer",       NULL,       NULL,       0,           True,         -1 },
+  { "mpv",           NULL,       NULL,       0,           True,         -1 },
+  { "mpv",           "ytc",      NULL,       0,           True,          1 }
 };
 
 /* layout(s) */
@@ -87,16 +95,18 @@ static const int resizehints = 0;    /* 1 means respect size hints in tiled resi
 
 static const Layout layouts[] = {
   /* symbol     arrange function */
-  { "[]=",      tile },    /* first entry is default */
-  { "><>",      NULL },    /* no layout function means floating behavior */
   { "[M]",      monocle },
+  { "[]=",      tile },
+  { "[]=",      bstackhoriz },
+  { "><>",      NULL },
 };
 
+// { MODKEY,           KEY,  focusmon, {.i = MON } }, \
+// { MODKEY|ShiftMask, KEY,  tagmon,   {.i = MON } }, \
+
 /* key definitions */
-#define MODKEY Mod1Mask
+#define MODKEY Mod4Mask
 #define TAGKEYS(KEY,TAG, MON) \
-{ MODKEY,           KEY,  focusmon, {.i = MON } }, \
-{ MODKEY|ShiftMask, KEY,  tagmon,   {.i = MON } }, \
 { MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
 { MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
 { MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
@@ -112,9 +122,8 @@ static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont,
 /* applications */
 static const char *termcmd[]  = { "urxvt", NULL };
 static const char *tmuxcmd[]  = { "urxvt","-title","tmux", "-e", "/home/cf8/bin/runtmux", NULL};
-static const char *lockcmd[]    = { "sflock", NULL};
-static const char *gvimcmd[]    = { "gvim",NULL};
-static const char *mcabbercmd[] = { "urxvt","-title","mcabber","-e","dtach", "-A", "/tmp/mcabber", "mcabber", NULL};
+static const char *lockcmd[]  = { "slock", NULL };
+static const char *gvimcmd[]  = { "urxvt","-title","vim", "-e", "vim", NULL};
 static const char *fmcmd[]    = { "urxvt","-title","ranger", "-e", "ranger", NULL};
 
 /* volume & mpd */
@@ -127,15 +136,13 @@ static const char *prevcmd[]    = { "mpc", "prev", NULL};
 static const char *nextcmd[]    = { "mpc", "next", NULL};
 
 static Key keys[] = {
-  { MODKEY,                       XK_grave,  spawn,          {.v = dmenucmd } },
+  { MODKEY,                       XK_grave,  spawn,          SHCMD("dmenu_run") },
   { MODKEY|ShiftMask,             XK_Return, spawn,          {.v = tmuxcmd } },
 
   /* applications */
   { 0,                            XK_Pause,  spawn,          {.v = lockcmd } },
   { MODKEY|ShiftMask,             XK_p,      spawn,          {.v = fmcmd } },
-  { MODKEY|ShiftMask,             XK_m,      spawn,          {.v = mcabbercmd } },
   { MODKEY|ShiftMask,             XK_g,      spawn,          {.v = gvimcmd } },
-  { MODKEY,                       XK_t,      spawn,          SHCMD("transset-df -a") },
 
   /* volume & mpd */
   { 0,                            XF86XK_AudioLowerVolume,   spawn,          {.v = voldown } },
@@ -157,14 +164,20 @@ static Key keys[] = {
 
   { MODKEY,                       XK_a,      setlayout,      {.v = &layouts[0]} },
   { MODKEY,                       XK_s,      setlayout,      {.v = &layouts[1]} },
-  { MODKEY,                       XK_f,      setlayout,      {.v = &layouts[2]} },
+  { MODKEY,                       XK_d,      setlayout,      {.v = &layouts[2]} },
+  { MODKEY,                       XK_f,      setlayout,      {.v = &layouts[3]} },
+
+  { MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
+  { MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+  { MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
+  { MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 
   { MODKEY,                       XK_space,  togglefloating, {0} },
   TAGKEYS(                        XK_1,                      0, 0)
   TAGKEYS(                        XK_2,                      1, 0)
   TAGKEYS(                        XK_3,                      2, 0)
-  TAGKEYS(                        XK_q,                      3, 1)
-  TAGKEYS(                        XK_w,                      4, 1)
+  TAGKEYS(                        XK_q,                      3, 0)
+  TAGKEYS(                        XK_w,                      4, 0)
   TAGKEYS(                        XK_e,                      5, 0)
   {  MODKEY|ShiftMask,            XK_r,      quit,           {0} },
 };
